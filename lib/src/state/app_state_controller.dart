@@ -85,7 +85,8 @@ class AppStateController extends StateNotifier<AsyncValue<AppViewState>> {
       final settings = await _appLockService.getSettings();
       await _reminderService.applyReminder(settings.reminderSettings);
 
-      final activities = await _activityRepository.getAllActivities(includeInactive: true);
+      final activities =
+          await _activityRepository.getAllActivities(includeInactive: true);
       final entries = await _dailyEntryRepository.getEntriesByDate(date);
       final streakData = await _buildStreakData(activities);
 
@@ -113,7 +114,8 @@ class AppStateController extends StateNotifier<AsyncValue<AppViewState>> {
 
     final normalized = DateTime(date.year, date.month, date.day);
     final minAllowed = DateTime.now().subtract(const Duration(days: 6));
-    if (normalized.isBefore(DateTime(minAllowed.year, minAllowed.month, minAllowed.day))) {
+    if (normalized.isBefore(
+        DateTime(minAllowed.year, minAllowed.month, minAllowed.day))) {
       return;
     }
 
@@ -147,6 +149,7 @@ class AppStateController extends StateNotifier<AsyncValue<AppViewState>> {
     required ActivityPolarity polarity,
     required int windowDays,
     required int targetSuccesses,
+    required String categoryKey,
   }) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) {
@@ -166,6 +169,7 @@ class AppStateController extends StateNotifier<AsyncValue<AppViewState>> {
       polarity: polarity,
       windowDays: windowDays,
       targetSuccesses: targetSuccesses,
+      categoryKey: categoryKey,
     );
     await _reloadActivities();
   }
@@ -177,6 +181,7 @@ class AppStateController extends StateNotifier<AsyncValue<AppViewState>> {
     required int windowDays,
     required int targetSuccesses,
     required bool isActive,
+    required String categoryKey,
   }) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) {
@@ -187,7 +192,8 @@ class AppStateController extends StateNotifier<AsyncValue<AppViewState>> {
       throw ArgumentError('Invalid target for selected window');
     }
 
-    if (await _activityRepository.existsByName(trimmed, excludeId: activity.id)) {
+    if (await _activityRepository.existsByName(trimmed,
+        excludeId: activity.id)) {
       throw ArgumentError('Activity name already exists');
     }
 
@@ -198,6 +204,7 @@ class AppStateController extends StateNotifier<AsyncValue<AppViewState>> {
       windowDays: windowDays,
       targetSuccesses: targetSuccesses,
       isActive: isActive,
+      categoryKey: categoryKey,
     );
     await _reloadActivities();
   }
@@ -220,7 +227,8 @@ class AppStateController extends StateNotifier<AsyncValue<AppViewState>> {
     if (current != null) {
       state = AsyncValue.data(
         current.copyWith(
-          settings: current.settings.copyWith(reminderSettings: reminderSettings),
+          settings:
+              current.settings.copyWith(reminderSettings: reminderSettings),
         ),
       );
     }
@@ -256,9 +264,12 @@ class AppStateController extends StateNotifier<AsyncValue<AppViewState>> {
     final summaries = <int, ActivityWindowSummary>{};
 
     for (final activity in activities.where((item) => item.isActive)) {
-      final keys = await _dailyEntryRepository.getCompletionDateKeysForActivity(activity.id);
-      streaks[activity.id] = _streakService.calculateCurrentWindowStreak(keys, activity);
-      summaries[activity.id] = _streakService.summarizeCurrentWindow(keys, activity);
+      final keys = await _dailyEntryRepository
+          .getCompletionDateKeysForActivity(activity.id);
+      streaks[activity.id] =
+          _streakService.calculateCurrentWindowStreak(keys, activity);
+      summaries[activity.id] =
+          _streakService.summarizeCurrentWindow(keys, activity);
     }
 
     return _StreakData(streaks: streaks, windowSummaries: summaries);
@@ -270,7 +281,8 @@ class AppStateController extends StateNotifier<AsyncValue<AppViewState>> {
       return;
     }
 
-    final entries = await _dailyEntryRepository.getEntriesByDate(current.selectedDate);
+    final entries =
+        await _dailyEntryRepository.getEntriesByDate(current.selectedDate);
     final streakData = await _buildStreakData(current.activities);
     state = AsyncValue.data(
       current.copyWith(
@@ -286,9 +298,11 @@ class AppStateController extends StateNotifier<AsyncValue<AppViewState>> {
     if (current == null) {
       return;
     }
-    final activities = await _activityRepository.getAllActivities(includeInactive: true);
+    final activities =
+        await _activityRepository.getAllActivities(includeInactive: true);
     final streakData = await _buildStreakData(activities);
-    final entries = await _dailyEntryRepository.getEntriesByDate(current.selectedDate);
+    final entries =
+        await _dailyEntryRepository.getEntriesByDate(current.selectedDate);
     state = AsyncValue.data(
       current.copyWith(
         activities: activities,
@@ -340,7 +354,8 @@ class LockState {
     );
   }
 
-  static const initial = LockState(initialized: false, pinEnabled: false, locked: false);
+  static const initial =
+      LockState(initialized: false, pinEnabled: false, locked: false);
 }
 
 class LockStateController extends StateNotifier<LockState> {
@@ -355,7 +370,8 @@ class LockStateController extends StateNotifier<LockState> {
 
   Future<void> refresh() async {
     final enabled = await _appLockService.isPinEnabled();
-    state = state.copyWith(pinEnabled: enabled, locked: enabled ? state.locked : false);
+    state = state.copyWith(
+        pinEnabled: enabled, locked: enabled ? state.locked : false);
   }
 
   Future<void> onAppResumed() async {
@@ -379,8 +395,10 @@ class LockStateController extends StateNotifier<LockState> {
 bool isDateEditable(DateTime date) {
   final now = DateTime.now();
   final normalized = DateTime(date.year, date.month, date.day);
-  final min = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 6));
-  return !normalized.isBefore(min) && !normalized.isAfter(DateTime(now.year, now.month, now.day));
+  final min =
+      DateTime(now.year, now.month, now.day).subtract(const Duration(days: 6));
+  return !normalized.isBefore(min) &&
+      !normalized.isAfter(DateTime(now.year, now.month, now.day));
 }
 
 String formatDateLabel(DateTime date) {

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../models/activity.dart';
 import '../../state/app_state_controller.dart';
 import '../../state/providers.dart';
+import '../activity_visuals.dart';
 import '../widgets/activity_card.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -16,8 +18,23 @@ class HomeScreen extends ConsumerWidget {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => Center(child: Text('Error: $error')),
       data: (state) {
-        final active = state.activities.where((item) => item.isActive).toList();
+        final active = state.activities.where((item) => item.isActive).toList()
+          ..sort((a, b) {
+            final categoryCompare = ActivityCategory.orderedKeys
+                .indexOf(a.categoryKey)
+                .compareTo(ActivityCategory.orderedKeys.indexOf(b.categoryKey));
+            if (categoryCompare != 0) {
+              return categoryCompare;
+            }
+            return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+          });
         final isEditable = isDateEditable(state.selectedDate);
+        final grouped = <String, List<Activity>>{};
+        for (final activity in active) {
+          grouped
+              .putIfAbsent(activity.categoryKey, () => <Activity>[])
+              .add(activity);
+        }
 
         return RefreshIndicator(
           onRefresh: () => ref.read(appStateControllerProvider.notifier).load(),
@@ -31,25 +48,49 @@ class HomeScreen extends ConsumerWidget {
               if (!isEditable)
                 const Padding(
                   padding: EdgeInsets.only(top: 8),
-                  child: Text('This date is read-only (outside 7-day edit window).'),
+                  child: Text(
+                      'This date is read-only (outside 7-day edit window).'),
                 ),
               const SizedBox(height: 12),
-              ...active.map((activity) {
-                final entry = state.entriesByActivity[activity.id];
-                final streak = state.streaks[activity.id] ?? 0;
-                final summary = state.windowSummaries[activity.id];
+              ...ActivityCategory.orderedKeys
+                  .where(grouped.containsKey)
+                  .expand((categoryKey) {
+                final categoryActivities = grouped[categoryKey]!;
+                return [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Icon(iconForCategory(categoryKey), size: 18),
+                        const SizedBox(width: 8),
+                        Text(
+                          ActivityCategory.label(categoryKey),
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                  ...categoryActivities.map((activity) {
+                    final entry = state.entriesByActivity[activity.id];
+                    final streak = state.streaks[activity.id] ?? 0;
+                    final summary = state.windowSummaries[activity.id];
 
-                return ActivityCard(
-                  key: ValueKey<int>(activity.id),
-                  activity: activity,
-                  entry: entry,
-                  streak: streak,
-                  windowSummary: summary,
-                  isEditable: isEditable,
-                  onChanged: (value) {
-                    ref.read(appStateControllerProvider.notifier).setBinary(activity, value);
-                  },
-                );
+                    return ActivityCard(
+                      key: ValueKey<int>(activity.id),
+                      activity: activity,
+                      entry: entry,
+                      streak: streak,
+                      windowSummary: summary,
+                      isEditable: isEditable,
+                      onChanged: (value) {
+                        ref
+                            .read(appStateControllerProvider.notifier)
+                            .setBinary(activity, value);
+                      },
+                    );
+                  }),
+                  const SizedBox(height: 8),
+                ];
               }),
               const SizedBox(height: 8),
               Text(
@@ -75,12 +116,15 @@ class HomeScreen extends ConsumerWidget {
                             duration: Duration(milliseconds: 700),
                           ),
                         );
-                        await ref.read(appStateControllerProvider.notifier).generateFeedback();
+                        await ref
+                            .read(appStateControllerProvider.notifier)
+                            .generateFeedback();
                         if (!context.mounted) {
                           return;
                         }
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Insights updated below.')),
+                          const SnackBar(
+                              content: Text('Insights updated below.')),
                         );
                       },
                 icon: const Icon(Icons.tips_and_updates),

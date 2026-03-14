@@ -1,4 +1,4 @@
-package com.example.offline_daily_tracker
+package com.ccristian.dailytracker
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -23,6 +23,7 @@ class ActivityRepository {
     required ActivityPolarity polarity,
     required int windowDays,
     required int targetSuccesses,
+    required String categoryKey,
   }) async {
     final db = await _dbHelper.database;
     final now = DateTime.now();
@@ -34,6 +35,8 @@ class ActivityRepository {
       'target_successes': targetSuccesses,
       'is_predefined': 0,
       'is_active': 1,
+      'category_key': categoryKey,
+      'icon_key': 'check_circle',
       'created_at': now.toIso8601String(),
       'deleted_at': null,
     });
@@ -48,6 +51,8 @@ class ActivityRepository {
       isActive: true,
       createdAt: now,
       deletedAt: null,
+      systemKey: null,
+      categoryKey: categoryKey,
     );
   }
 
@@ -58,6 +63,7 @@ class ActivityRepository {
     required int windowDays,
     required int targetSuccesses,
     required bool isActive,
+    required String categoryKey,
   }) async {
     final db = await _dbHelper.database;
     await db.update(
@@ -68,6 +74,7 @@ class ActivityRepository {
         'window_days': windowDays,
         'target_successes': targetSuccesses,
         'is_active': isActive ? 1 : 0,
+        'category_key': categoryKey,
       },
       where: 'id = ? AND deleted_at IS NULL',
       whereArgs: [activityId],
@@ -122,13 +129,19 @@ class ActivityRepository {
       id: row['id'] as int,
       name: row['name'] as String,
       type: Activity.parseType(row['type'] as String),
-      polarity: Activity.parsePolarity((row['polarity'] as String?) ?? 'do_more'),
+      polarity:
+          Activity.parsePolarity((row['polarity'] as String?) ?? 'do_more'),
       windowDays: (row['window_days'] as int?) ?? 7,
       targetSuccesses: (row['target_successes'] as int?) ?? 7,
       isPredefined: (row['is_predefined'] as int) == 1,
       isActive: (row['is_active'] as int) == 1,
+      systemKey: row['system_key'] as String?,
+      categoryKey: (row['category_key'] as String?) ?? ActivityCategory.health,
+      iconKey: (row['icon_key'] as String?) ?? 'check_circle',
       createdAt: DateTime.parse(row['created_at'] as String),
-      deletedAt: row['deleted_at'] == null ? null : DateTime.parse(row['deleted_at'] as String),
+      deletedAt: row['deleted_at'] == null
+          ? null
+          : DateTime.parse(row['deleted_at'] as String),
     );
   }
 }

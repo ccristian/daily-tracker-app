@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/activity.dart';
 import '../../state/providers.dart';
+import '../activity_visuals.dart';
 
 class ActivitiesScreen extends ConsumerStatefulWidget {
   const ActivitiesScreen({super.key});
@@ -14,6 +15,7 @@ class ActivitiesScreen extends ConsumerStatefulWidget {
 class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
   final _nameController = TextEditingController();
   ActivityPolarity _newPolarity = ActivityPolarity.doMore;
+  String _newCategoryKey = ActivityCategory.health;
   int _newTargetSuccesses = 5;
 
   @override
@@ -37,6 +39,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
             polarity: _newPolarity,
             windowDays: 7,
             targetSuccesses: _newTargetSuccesses,
+            categoryKey: _newCategoryKey,
           );
       _nameController.clear();
       if (mounted) {
@@ -57,6 +60,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
   Future<void> _editActivity(Activity activity) async {
     final nameController = TextEditingController(text: activity.name);
     var polarity = activity.polarity;
+    var categoryKey = activity.categoryKey;
     const windowDays = 7;
     var target = activity.targetSuccesses;
     var isActive = activity.isActive;
@@ -99,9 +103,27 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                       },
                     ),
                     const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: categoryKey,
+                      decoration: const InputDecoration(labelText: 'Category'),
+                      items: _categoryMenuItems(),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setState(() {
+                          categoryKey = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
                     const Text('Window: 7 days'),
                     const SizedBox(height: 12),
-                    Text('Target successes: $target/7'),
+                    Text(
+                      Activity.buildTargetLabel(
+                        polarity: polarity,
+                        targetSuccesses: target,
+                        windowDays: windowDays,
+                      ),
+                    ),
                     Slider(
                       min: 1,
                       max: 7,
@@ -154,6 +176,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
             windowDays: windowDays,
             targetSuccesses: target,
             isActive: isActive,
+            categoryKey: categoryKey,
           );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -164,7 +187,9 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$error')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$error')),
+      );
     }
   }
 
@@ -173,7 +198,9 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Activity'),
-        content: Text('Delete "${activity.name}"? This hides it from tracking, but keeps history.'),
+        content: Text(
+          'Delete "${activity.name}"? This hides it from tracking, but keeps history.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -191,7 +218,9 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
       return;
     }
 
-    await ref.read(appStateControllerProvider.notifier).deleteActivity(activity.id);
+    await ref
+        .read(appStateControllerProvider.notifier)
+        .deleteActivity(activity.id);
   }
 
   @override
@@ -202,10 +231,25 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => Center(child: Text('Error: $error')),
       data: (state) {
+        final grouped = <String, List<Activity>>{};
+        for (final activity in state.activities) {
+          grouped
+              .putIfAbsent(activity.categoryKey, () => <Activity>[])
+              .add(activity);
+        }
+        for (final entry in grouped.entries) {
+          entry.value.sort(
+            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+          );
+        }
+
         return ListView(
           padding: const EdgeInsets.all(12),
           children: [
-            Text('Add Activity', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Add Activity',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             TextField(
               controller: _nameController,
@@ -236,9 +280,27 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
               },
             ),
             const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              initialValue: _newCategoryKey,
+              decoration: const InputDecoration(labelText: 'Category'),
+              items: _categoryMenuItems(),
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() {
+                  _newCategoryKey = value;
+                });
+              },
+            ),
+            const SizedBox(height: 8),
             const Text('Window: 7 days'),
             const SizedBox(height: 8),
-            Text('Target successes: $_newTargetSuccesses/7'),
+            Text(
+              Activity.buildTargetLabel(
+                polarity: _newPolarity,
+                targetSuccesses: _newTargetSuccesses,
+                windowDays: 7,
+              ),
+            ),
             Slider(
               min: 1,
               max: 7,
@@ -256,56 +318,118 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
               label: const Text('Add Activity'),
             ),
             const SizedBox(height: 16),
-            Text('Current Activities', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Habit Library',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
-            ...state.activities.map((activity) {
-              final summary = activity.polarity == ActivityPolarity.doMore
-                  ? 'At least ${activity.targetSuccesses}/${activity.windowDays}'
-                  : 'At most ${activity.allowedFailures}/${activity.windowDays}';
-              return Card(
-                child: Column(
-                  children: [
-                    ListTile(
-                      title: Text(activity.name),
-                      subtitle: Text(
-                        '$summary\nStatus: ${activity.isActive ? 'Active (shown on daily screen)' : 'Hidden (not shown on daily screen)'}',
+            ...ActivityCategory.orderedKeys
+                .where(grouped.containsKey)
+                .expand((categoryKey) {
+              final activities = grouped[categoryKey]!;
+              return [
+                Padding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 8),
+                  child: Row(
+                    children: [
+                      Icon(iconForCategory(categoryKey)),
+                      const SizedBox(width: 8),
+                      Text(
+                        ActivityCategory.label(categoryKey),
+                        style: Theme.of(context).textTheme.titleSmall,
                       ),
-                      isThreeLine: true,
-                      leading: activity.isPredefined
-                          ? const Icon(Icons.bookmark_outline)
-                          : const Icon(Icons.person_outline),
-                      trailing: Switch(
-                        value: activity.isActive,
-                        onChanged: (value) {
-                          ref.read(appStateControllerProvider.notifier).setActivityActive(activity.id, value);
-                        },
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                      child: Row(
-                        children: [
-                          OutlinedButton.icon(
-                            onPressed: () => _editActivity(activity),
-                            icon: const Icon(Icons.edit),
-                            label: const Text('Edit'),
-                          ),
-                          const SizedBox(width: 8),
-                          OutlinedButton.icon(
-                            onPressed: () => _deleteActivity(activity),
-                            icon: const Icon(Icons.delete_outline),
-                            label: const Text('Delete'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              );
+                ...activities.map((activity) => _ActivityListCard(
+                      activity: activity,
+                      onToggleActive: (value) {
+                        ref
+                            .read(appStateControllerProvider.notifier)
+                            .setActivityActive(activity.id, value);
+                      },
+                      onEdit: () => _editActivity(activity),
+                      onDelete: () => _deleteActivity(activity),
+                    )),
+              ];
             }),
           ],
         );
       },
+    );
+  }
+
+  List<DropdownMenuItem<String>> _categoryMenuItems() {
+    return ActivityCategory.orderedKeys
+        .map(
+          (key) => DropdownMenuItem<String>(
+            value: key,
+            child: Text(ActivityCategory.label(key)),
+          ),
+        )
+        .toList();
+  }
+}
+
+class _ActivityListCard extends StatelessWidget {
+  const _ActivityListCard({
+    required this.activity,
+    required this.onToggleActive,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final Activity activity;
+  final ValueChanged<bool> onToggleActive;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Column(
+        children: [
+          ListTile(
+            title: Text(activity.name),
+            subtitle: Text(
+              '${activity.targetSummaryLabel}\nStatus: ${activity.isActive ? 'Active (shown on daily screen)' : 'Hidden (available in library)'}',
+            ),
+            isThreeLine: true,
+            leading: CircleAvatar(
+              backgroundColor:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+              child: Icon(
+                iconForActivity(activity),
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            trailing: Switch(
+              value: activity.isActive,
+              onChanged: onToggleActive,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                Chip(label: Text(activity.isPredefined ? 'Preset' : 'Custom')),
+                OutlinedButton.icon(
+                  onPressed: onEdit,
+                  icon: const Icon(Icons.edit),
+                  label: const Text('Edit'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: onDelete,
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('Delete'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

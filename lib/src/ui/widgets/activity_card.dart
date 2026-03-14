@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/activity.dart';
 import '../../models/daily_entry.dart';
+import '../activity_visuals.dart';
 
 class ActivityCard extends StatelessWidget {
   const ActivityCard({
@@ -26,9 +27,6 @@ class ActivityCard extends StatelessWidget {
     final theme = Theme.of(context);
     final value = entry?.binaryValue ?? false;
     final doneDays = windowSummary?.doneDays ?? 0;
-    final targetLabel = activity.polarity == ActivityPolarity.doMore
-        ? 'At least ${activity.targetSuccesses}/${activity.windowDays}'
-        : 'At most ${activity.allowedFailures}/${activity.windowDays}';
 
     return Card(
       child: Padding(
@@ -38,18 +36,42 @@ class ActivityCard extends StatelessWidget {
           children: [
             Row(
               children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor:
+                      theme.colorScheme.primary.withValues(alpha: 0.12),
+                  child: Icon(
+                    iconForActivity(activity),
+                    size: 18,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: Text(
-                    activity.name,
-                    style: theme.textTheme.titleMedium,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        activity.name,
+                        style: theme.textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        activity.categoryLabel,
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
                   ),
                 ),
                 _StreakBadge(streak: streak, windowDays: activity.windowDays),
               ],
             ),
             const SizedBox(height: 6),
-            Text(targetLabel, style: theme.textTheme.bodySmall),
-            Text('This window: $doneDays/${activity.windowDays} days', style: theme.textTheme.bodySmall),
+            Text(activity.targetSummaryLabel, style: theme.textTheme.bodySmall),
+            Text('This window: $doneDays/${activity.windowDays} days',
+                style: theme.textTheme.bodySmall),
+            if (activity.polarity == ActivityPolarity.doLess)
+              Text(activity.trackingHint, style: theme.textTheme.bodySmall),
             const SizedBox(height: 10),
             Row(
               children: [
