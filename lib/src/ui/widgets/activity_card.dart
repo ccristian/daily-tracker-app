@@ -27,6 +27,7 @@ class ActivityCard extends StatelessWidget {
     final theme = Theme.of(context);
     final value = entry?.binaryValue ?? false;
     final doneDays = windowSummary?.doneDays ?? 0;
+    final categoryColor = colorForCategory(activity.categoryKey);
 
     return Card(
       child: Padding(
@@ -38,12 +39,11 @@ class ActivityCard extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 18,
-                  backgroundColor:
-                      theme.colorScheme.primary.withValues(alpha: 0.12),
+                  backgroundColor: categoryColor.withValues(alpha: 0.14),
                   child: Icon(
                     iconForActivity(activity),
                     size: 18,
-                    color: theme.colorScheme.primary,
+                    color: categoryColor,
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -58,7 +58,10 @@ class ActivityCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         activity.categoryLabel,
-                        style: theme.textTheme.bodySmall,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: categoryColor,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),

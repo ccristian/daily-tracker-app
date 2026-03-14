@@ -2,6 +2,23 @@ import 'package:flutter/material.dart';
 
 import '../models/activity.dart';
 
+Color colorForCategory(String categoryKey) {
+  switch (categoryKey) {
+    case ActivityCategory.health:
+      return const Color(0xFF2E8B57);
+    case ActivityCategory.fitness:
+      return const Color(0xFF1D7CF2);
+    case ActivityCategory.mind:
+      return const Color(0xFF8A5CF6);
+    case ActivityCategory.productivity:
+      return const Color(0xFFF59E0B);
+    case ActivityCategory.reduce:
+      return const Color(0xFFE35D6A);
+    default:
+      return const Color(0xFF64748B);
+  }
+}
+
 IconData iconForCategory(String categoryKey) {
   switch (categoryKey) {
     case ActivityCategory.health:

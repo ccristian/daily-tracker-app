@@ -199,7 +199,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Delete Activity'),
         content: Text(
-          'Delete "${activity.name}"? Built-in and custom activities can both be deleted. History is kept.',
+          'Delete "${activity.name}"? History is kept.',
         ),
         actions: [
           TextButton(
@@ -332,11 +332,16 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                   padding: const EdgeInsets.only(top: 8, bottom: 8),
                   child: Row(
                     children: [
-                      Icon(iconForCategory(categoryKey)),
+                      Icon(
+                        iconForCategory(categoryKey),
+                        color: colorForCategory(categoryKey),
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         ActivityCategory.label(categoryKey),
-                        style: Theme.of(context).textTheme.titleSmall,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              color: colorForCategory(categoryKey),
+                            ),
                       ),
                     ],
                   ),
@@ -386,6 +391,8 @@ class _ActivityListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final categoryColor = colorForCategory(activity.categoryKey);
+
     return Card(
       child: Column(
         children: [
@@ -396,11 +403,10 @@ class _ActivityListCard extends StatelessWidget {
             ),
             isThreeLine: true,
             leading: CircleAvatar(
-              backgroundColor:
-                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+              backgroundColor: categoryColor.withValues(alpha: 0.14),
               child: Icon(
                 iconForActivity(activity),
-                color: Theme.of(context).colorScheme.primary,
+                color: categoryColor,
               ),
             ),
             trailing: Switch(
@@ -414,7 +420,6 @@ class _ActivityListCard extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
-                Chip(label: Text(activity.isPredefined ? 'Built-in' : 'Custom')),
                 OutlinedButton.icon(
                   onPressed: onEdit,
                   icon: const Icon(Icons.edit),
