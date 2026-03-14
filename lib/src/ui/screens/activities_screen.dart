@@ -199,7 +199,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Delete Activity'),
         content: Text(
-          'Delete "${activity.name}"? This hides it from tracking, but keeps history.',
+          'Delete "${activity.name}"? Built-in and custom activities can both be deleted. History is kept.',
         ),
         actions: [
           TextButton(
@@ -414,7 +414,7 @@ class _ActivityListCard extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
-                Chip(label: Text(activity.isPredefined ? 'Preset' : 'Custom')),
+                Chip(label: Text(activity.isPredefined ? 'Built-in' : 'Custom')),
                 OutlinedButton.icon(
                   onPressed: onEdit,
                   icon: const Icon(Icons.edit),
