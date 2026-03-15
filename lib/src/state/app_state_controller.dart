@@ -16,6 +16,7 @@ class AppViewState {
   const AppViewState({
     required this.selectedDate,
     required this.activities,
+    required this.categories,
     required this.entriesByActivity,
     required this.streaks,
     required this.windowSummaries,
@@ -25,6 +26,7 @@ class AppViewState {
 
   final DateTime selectedDate;
   final List<Activity> activities;
+  final List<ActivityCategoryDefinition> categories;
   final Map<int, DailyEntry> entriesByActivity;
   final Map<int, int> streaks;
   final Map<int, ActivityWindowSummary> windowSummaries;
@@ -34,6 +36,7 @@ class AppViewState {
   AppViewState copyWith({
     DateTime? selectedDate,
     List<Activity>? activities,
+    List<ActivityCategoryDefinition>? categories,
     Map<int, DailyEntry>? entriesByActivity,
     Map<int, int>? streaks,
     Map<int, ActivityWindowSummary>? windowSummaries,
@@ -43,6 +46,7 @@ class AppViewState {
     return AppViewState(
       selectedDate: selectedDate ?? this.selectedDate,
       activities: activities ?? this.activities,
+      categories: categories ?? this.categories,
       entriesByActivity: entriesByActivity ?? this.entriesByActivity,
       streaks: streaks ?? this.streaks,
       windowSummaries: windowSummaries ?? this.windowSummaries,
@@ -94,6 +98,7 @@ class AppStateController extends StateNotifier<AsyncValue<AppViewState>> {
         AppViewState(
           selectedDate: DateTime(date.year, date.month, date.day),
           activities: activities,
+          categories: settings.categories,
           entriesByActivity: entries,
           streaks: streakData.streaks,
           windowSummaries: streakData.windowSummaries,
@@ -256,7 +261,102 @@ class AppStateController extends StateNotifier<AsyncValue<AppViewState>> {
       return;
     }
     final settings = await _appLockService.getSettings();
-    state = AsyncValue.data(current.copyWith(settings: settings));
+    state = AsyncValue.data(
+      current.copyWith(
+        settings: settings,
+        categories: settings.categories,
+      ),
+    );
+  }
+
+  Future<void> addCategory(String name) async {
+    final current = state.value;
+    if (current == null) {
+      return;
+    }
+
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      throw ArgumentError('Category name cannot be empty');
+    }
+
+    final duplicate = current.categories.any(
+      (category) => category.label.toLowerCase() == trimmed.toLowerCase(),
+    );
+    if (duplicate) {
+      throw ArgumentError('Category already exists');
+    }
+
+    final key = ActivityCategory.buildKey(
+      trimmed,
+      existingKeys: current.categories.map((category) => category.key),
+    );
+    final categories = [
+      ...current.categories,
+      ActivityCategoryDefinition(
+        key: key,
+        label: trimmed,
+        iconKey: ActivityCategory.nextCustomIconKey(current.categories),
+      ),
+    ];
+    await _updateCategories(categories);
+  }
+
+  Future<void> renameCategory({
+    required String categoryKey,
+    required String name,
+  }) async {
+    final current = state.value;
+    if (current == null) {
+      return;
+    }
+
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      throw ArgumentError('Category name cannot be empty');
+    }
+
+    final duplicate = current.categories.any(
+      (category) =>
+          category.key != categoryKey &&
+          category.label.toLowerCase() == trimmed.toLowerCase(),
+    );
+    if (duplicate) {
+      throw ArgumentError('Category already exists');
+    }
+
+    final categories = current.categories
+        .map(
+          (category) => category.key == categoryKey
+              ? category.copyWith(label: trimmed)
+              : category,
+        )
+        .toList();
+    await _updateCategories(categories);
+  }
+
+  Future<void> deleteCategory(String categoryKey) async {
+    final current = state.value;
+    if (current == null) {
+      return;
+    }
+
+    if (current.categories.length <= 1) {
+      throw ArgumentError('At least one category is required');
+    }
+
+    final fallback = current.categories.firstWhere(
+      (category) => category.key != categoryKey,
+      orElse: () => current.categories.first,
+    );
+    await _activityRepository.replaceCategoryKey(
+      fromCategoryKey: categoryKey,
+      toCategoryKey: fallback.key,
+    );
+    final categories = current.categories
+        .where((category) => category.key != categoryKey)
+        .toList();
+    await _updateCategories(categories, reloadActivities: true);
   }
 
   Future<_StreakData> _buildStreakData(List<Activity> activities) async {
@@ -306,6 +406,7 @@ class AppStateController extends StateNotifier<AsyncValue<AppViewState>> {
     state = AsyncValue.data(
       current.copyWith(
         activities: activities,
+        categories: current.categories,
         streaks: streakData.streaks,
         windowSummaries: streakData.windowSummaries,
         entriesByActivity: entries,
@@ -318,6 +419,46 @@ class AppStateController extends StateNotifier<AsyncValue<AppViewState>> {
       return false;
     }
     return targetSuccesses >= 1 && targetSuccesses <= windowDays;
+  }
+
+  Future<void> _updateCategories(
+    List<ActivityCategoryDefinition> categories, {
+    bool reloadActivities = false,
+  }) async {
+    final current = state.value;
+    if (current == null) {
+      return;
+    }
+
+    final sanitized = ActivityCategory.sanitizeDefinitions(categories);
+    await _settingsRepository.updateCategories(sanitized);
+    final settings = current.settings.copyWith(categories: sanitized);
+
+    if (reloadActivities) {
+      final activities =
+          await _activityRepository.getAllActivities(includeInactive: true);
+      final streakData = await _buildStreakData(activities);
+      final entries =
+          await _dailyEntryRepository.getEntriesByDate(current.selectedDate);
+      state = AsyncValue.data(
+        current.copyWith(
+          settings: settings,
+          categories: sanitized,
+          activities: activities,
+          streaks: streakData.streaks,
+          windowSummaries: streakData.windowSummaries,
+          entriesByActivity: entries,
+        ),
+      );
+      return;
+    }
+
+    state = AsyncValue.data(
+      current.copyWith(
+        settings: settings,
+        categories: sanitized,
+      ),
+    );
   }
 }
 

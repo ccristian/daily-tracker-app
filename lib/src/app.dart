@@ -8,14 +8,14 @@ import 'ui/screens/home_screen.dart';
 import 'ui/screens/settings_screen.dart';
 import 'ui/widgets/pin_dialogs.dart';
 
-class DailyTrackerApp extends ConsumerStatefulWidget {
-  const DailyTrackerApp({super.key});
+class BonoraApp extends ConsumerStatefulWidget {
+  const BonoraApp({super.key});
 
   @override
-  ConsumerState<DailyTrackerApp> createState() => _DailyTrackerAppState();
+  ConsumerState<BonoraApp> createState() => _BonoraAppState();
 }
 
-class _DailyTrackerAppState extends ConsumerState<DailyTrackerApp> with WidgetsBindingObserver {
+class _BonoraAppState extends ConsumerState<BonoraApp> with WidgetsBindingObserver {
   int _tabIndex = 0;
 
   @override
@@ -43,7 +43,7 @@ class _DailyTrackerAppState extends ConsumerState<DailyTrackerApp> with WidgetsB
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Daily Tracker',
+      title: 'Bonora',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2A6F4F)),
       ),
@@ -56,7 +56,7 @@ class _DailyTrackerAppState extends ConsumerState<DailyTrackerApp> with WidgetsB
                 )
               : Scaffold(
                   appBar: AppBar(
-                    title: const Text('Daily Tracker'),
+                    title: const Text('Bonora'),
                   ),
                   body: IndexedStack(
                     index: _tabIndex,

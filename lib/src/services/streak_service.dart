@@ -16,6 +16,12 @@ class StreakService {
     var windowEnd = today;
 
     for (var i = 0; i < maxWindows; i += 1) {
+      final windowStart =
+          windowEnd.subtract(Duration(days: activity.windowDays - 1));
+      if (windowStart.isBefore(createdAt)) {
+        break;
+      }
+
       final summary = summarizeWindow(
         doneDateKeys: done,
         activity: activity,

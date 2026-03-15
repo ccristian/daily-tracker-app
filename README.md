@@ -1,18 +1,17 @@
-# Daily Tracker
+# Bonora
 
-iOS/Android Flutter app for daily yes/no activity tracking with configurable weekly targets and optional PIN lock.
+iOS/Android Flutter app for offline habit tracking with customizable categories, per-activity history, weekly streak logic, and optional PIN lock.
 
 ## Features
 - Local-only storage (SQLite), no cloud sync.
 - Daily tracking with one check-in per activity.
-- Activity type:
-  - Yes/No toggle
-- Per-activity configuration:
-  - Build habit (`do more`) or limit habit (`do less`)
-  - Target in rolling week (`X/7`)
+- Yes/No activity toggle with `do more` and `do less` modes.
+- Rolling weekly targets (`X/7`) and current window streaks.
 - Predefined + custom activities.
-- Per-activity current window streaks.
+- Custom category management with bundled icons for user-created categories.
+- Per-activity calendar/history view from the activity card.
 - Last 7 days editable history.
+- Compact mobile-first activity cards for smaller devices.
 - Optional local daily reminder.
 - Optional 4-digit PIN lock on app reopen.
 - Rule-based local day feedback.
@@ -38,3 +37,4 @@ iOS/Android Flutter app for daily yes/no activity tracking with configurable wee
    - `flutter run`
 3. Tests:
    - `flutter test`
+   - `flutter analyze`

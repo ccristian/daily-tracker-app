@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:sqflite/sqflite.dart';
 
+import '../models/activity.dart';
 import '../models/settings.dart';
 import 'database_helper.dart';
 
@@ -16,6 +19,7 @@ class SettingsRepository implements PinSettingsStore {
   SettingsRepository(this._dbHelper);
 
   final DatabaseHelper _dbHelper;
+  static const _activityCategoriesKey = 'activity_categories';
 
   @override
   Future<AppSettings> getSettings() async {
@@ -35,6 +39,7 @@ class SettingsRepository implements PinSettingsStore {
       pinEnabled: (map['pin_enabled'] ?? '0') == '1',
       pinHash: map['pin_hash'],
       pinSalt: map['pin_salt'],
+      categories: _parseCategories(map[_activityCategoriesKey]),
     );
   }
 
@@ -55,6 +60,45 @@ class SettingsRepository implements PinSettingsStore {
     await _upsert(db, 'pin_enabled', enabled ? '1' : '0');
     await _upsert(db, 'pin_hash', hash);
     await _upsert(db, 'pin_salt', salt);
+  }
+
+  Future<void> updateCategories(
+    List<ActivityCategoryDefinition> categories,
+  ) async {
+    final db = await _dbHelper.database;
+    final sanitized = ActivityCategory.sanitizeDefinitions(categories);
+    await _upsert(
+      db,
+      _activityCategoriesKey,
+      jsonEncode(
+        sanitized.map((category) => category.toJson()).toList(),
+      ),
+    );
+  }
+
+  List<ActivityCategoryDefinition> _parseCategories(String? raw) {
+    if (raw == null || raw.trim().isEmpty) {
+      return ActivityCategory.defaultDefinitions;
+    }
+
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) {
+        return ActivityCategory.defaultDefinitions;
+      }
+
+      final categories = decoded
+          .whereType<Map>()
+          .map(
+            (entry) =>
+                ActivityCategoryDefinition.fromJson(entry.cast<String, dynamic>()),
+          )
+          .whereType<ActivityCategoryDefinition>()
+          .toList();
+      return ActivityCategory.sanitizeDefinitions(categories);
+    } catch (_) {
+      return ActivityCategory.defaultDefinitions;
+    }
   }
 
   Future<void> _upsert(Database db, String key, String? value) async {

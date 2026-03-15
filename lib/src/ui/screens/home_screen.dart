@@ -6,6 +6,7 @@ import '../../state/app_state_controller.dart';
 import '../../state/providers.dart';
 import '../activity_visuals.dart';
 import '../widgets/activity_card.dart';
+import 'activity_history_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -18,11 +19,14 @@ class HomeScreen extends ConsumerWidget {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => Center(child: Text('Error: $error')),
       data: (state) {
+        final categoryOrder = {
+          for (var i = 0; i < state.categories.length; i++)
+            state.categories[i].key: i,
+        };
         final active = state.activities.where((item) => item.isActive).toList()
           ..sort((a, b) {
-            final categoryCompare = ActivityCategory.orderedKeys
-                .indexOf(a.categoryKey)
-                .compareTo(ActivityCategory.orderedKeys.indexOf(b.categoryKey));
+            final categoryCompare = (categoryOrder[a.categoryKey] ?? 9999)
+                .compareTo(categoryOrder[b.categoryKey] ?? 9999);
             if (categoryCompare != 0) {
               return categoryCompare;
             }
@@ -52,7 +56,8 @@ class HomeScreen extends ConsumerWidget {
                       'This date is read-only (outside 7-day edit window).'),
                 ),
               const SizedBox(height: 12),
-              ...ActivityCategory.orderedKeys
+              ...state.categories
+                  .map((category) => category.key)
                   .where(grouped.containsKey)
                   .expand((categoryKey) {
                 final categoryActivities = grouped[categoryKey]!;
@@ -61,10 +66,16 @@ class HomeScreen extends ConsumerWidget {
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Row(
                       children: [
-                        Icon(iconForCategory(categoryKey), size: 18),
+                        Icon(
+                          iconForCategory(
+                            categoryKey,
+                            categories: state.categories,
+                          ),
+                          size: 18,
+                        ),
                         const SizedBox(width: 8),
                         Text(
-                          ActivityCategory.label(categoryKey),
+                          ActivityCategory.labelFor(categoryKey, state.categories),
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
                       ],
@@ -78,6 +89,16 @@ class HomeScreen extends ConsumerWidget {
                     return ActivityCard(
                       key: ValueKey<int>(activity.id),
                       activity: activity,
+                      categories: state.categories,
+                      onOpenHistory: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (context) => ActivityHistoryScreen(
+                              activityId: activity.id,
+                            ),
+                          ),
+                        );
+                      },
                       entry: entry,
                       streak: streak,
                       windowSummary: summary,

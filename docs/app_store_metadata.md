@@ -1,34 +1,36 @@
 # App Store Metadata
 
 ## App Name
-Daily Tracker
+Bonora
 
 ## Subtitle
 Simple offline habit tracking
 
 ## Promotional Text
-Track your daily habits privately on your device, follow weekly streaks, and review your month at a glance.
+Track habits privately on your device, organize them with custom categories, and review progress with simple calendar history.
 
 ## Description
-Daily Tracker is a simple offline habit tracker for iPhone.
+Bonora is a simple offline habit tracker for iPhone.
 
-Track daily activities with quick yes or no check-ins, set weekly targets, and review your month with a visual calendar that highlights how your days are going.
+Track daily activities with quick yes or no check-ins, set weekly targets, organize them with categories, and review each habit with calendar history.
 
 Everything stays on your device. There is no cloud account and no online sync.
 
 Features:
 - Daily yes/no activity tracking
 - Weekly targets and streak tracking
+- Custom categories with bundled icons
 - Default and custom activities
 - Monthly calendar history
+- Per-activity history view
 - Optional daily reminder
 - Optional 4-digit PIN lock
 - Local-only storage
 
-Daily Tracker is built for personal use, fast check-ins, and privacy-first habit tracking.
+Bonora is built for personal use, fast check-ins, and privacy-first habit tracking.
 
 ## Keywords
-habit tracker, daily tracker, routine, wellness, streaks, habits, productivity, offline
+habit tracker, offline habits, routine, streaks, calendar, wellness, productivity, categories
 
 ## Support URL
 Add your real support page URL here.

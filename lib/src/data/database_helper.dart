@@ -265,6 +265,7 @@ class DatabaseHelper {
       'pin_enabled': '0',
       'pin_hash': null,
       'pin_salt': null,
+      'activity_categories': null,
     };
 
     for (final entry in settings.entries) {

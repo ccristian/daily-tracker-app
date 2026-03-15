@@ -7,5 +7,5 @@ import 'src/data/database_init.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDatabaseFactory();
-  runApp(const ProviderScope(child: DailyTrackerApp()));
+  runApp(const ProviderScope(child: BonoraApp()));
 }

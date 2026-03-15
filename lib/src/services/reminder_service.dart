@@ -77,7 +77,7 @@ class ReminderService {
       const NotificationDetails(
         android: AndroidNotificationDetails(
           'daily_tracker_reminders',
-          'Daily Tracker Reminders',
+          'Bonora Reminders',
           channelDescription: 'Daily check-in reminders for activity tracking',
           importance: Importance.defaultImportance,
           priority: Priority.defaultPriority,

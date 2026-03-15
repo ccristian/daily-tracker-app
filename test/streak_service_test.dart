@@ -96,8 +96,31 @@ void main() {
         now: DateTime(2026, 2, 22),
       );
 
-      expect(streak, greaterThanOrEqualTo(1));
+      expect(streak, 7);
       expect(streak, lessThan(20));
+    });
+
+    test('brand new do_less activity does not start with a free streak', () {
+      final activity = Activity(
+        id: 1,
+        name: 'Test',
+        type: ActivityType.yesNo,
+        polarity: ActivityPolarity.doLess,
+        windowDays: 7,
+        targetSuccesses: 5,
+        isPredefined: false,
+        isActive: true,
+        createdAt: DateTime(2026, 2, 22),
+        deletedAt: null,
+      );
+
+      final streak = service.calculateCurrentWindowStreak(
+        const [],
+        activity,
+        now: DateTime(2026, 2, 22),
+      );
+
+      expect(streak, 0);
     });
   });
 }

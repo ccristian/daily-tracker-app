@@ -2,7 +2,7 @@
 
 ## Before App Store Connect
 - Apple Developer Program account approved and active
-- Bundle identifier confirmed as `com.ccristian.dailytracker`
+- Bundle identifier confirmed as `com.ccristian.bonora`
 - Version set in `pubspec.yaml` to `0.0.1+1`
 - App tested on a real iPhone
 - App icon and launch assets verified
@@ -12,9 +12,9 @@
 
 ## App Store Connect Setup
 - Create app in App Store Connect
-- App name: `Daily Tracker`
-- Bundle ID: `com.ccristian.dailytracker`
-- SKU created, for example `dailytracker001`
+- App name: `Bonora`
+- Bundle ID: `com.ccristian.bonora`
+- SKU created, for example `bonora001`
 - Primary language selected
 
 ## Xcode Signing
@@ -22,7 +22,7 @@
 - Select `Runner` target
 - Enable `Automatically manage signing`
 - Select your Apple Developer team
-- Confirm bundle identifier is `com.ccristian.dailytracker`
+- Confirm bundle identifier is `com.ccristian.bonora`
 
 ## Build
 - Run `flutter pub get`

@@ -104,6 +104,19 @@ class ActivityRepository {
     );
   }
 
+  Future<void> replaceCategoryKey({
+    required String fromCategoryKey,
+    required String toCategoryKey,
+  }) async {
+    final db = await _dbHelper.database;
+    await db.update(
+      'activities',
+      {'category_key': toCategoryKey},
+      where: 'category_key = ? AND deleted_at IS NULL',
+      whereArgs: [fromCategoryKey],
+    );
+  }
+
   Future<bool> existsByName(String name, {int? excludeId}) async {
     final db = await _dbHelper.database;
     final where = StringBuffer('LOWER(name) = LOWER(?) AND deleted_at IS NULL');
